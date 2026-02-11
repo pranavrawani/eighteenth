@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Valuation: Us 📈</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #05120a;
+            --terminal-bg: #0a1f13;
+            --market-green: #00ff88;
+            --gold: #ffd700;
+            --text-muted: #6e8f7c;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            font-family: 'Roboto Mono', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--market-green);
+        }
+
+        /* --- BACKGROUND ANIMATIONS --- */
+        .bg-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Floating Emojis (Slow, varied) */
+        .finance-emoji {
+            position: absolute;
+            bottom: -50px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+            filter: grayscale(0.5) sepia(1) hue-rotate(100deg); /* Greenish tint */
+            animation: floatUp linear infinite;
+        }
+
+        /* Rising Assets (Faster coins/arrows) */
+        .rising-asset {
+            position: absolute;
+            bottom: -50px;
+            font-size: 1.2rem;
+            color: var(--gold);
+            opacity: 0.6;
+            animation: riseQuick linear infinite;
+            text-shadow: 0 0 5px var(--gold);
+        }
+
+        @keyframes floatUp {
+            to { transform: translateY(-110vh) rotate(20deg); opacity: 0; }
+        }
+        @keyframes riseQuick {
+            to { transform: translateY(-110vh); opacity: 0; }
+        }
+
+        /* --- MAIN TERMINAL CONTAINER --- */
+        .terminal-container {
+            z-index: 10;
+            width: 90%;
+            max-width: 700px;
+            background: var(--terminal-bg);
+            border: 2px solid var(--market-green);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+            position: relative;
+        }
+
+        /* Header Elements */
+        .ticker-tape {
+            border-bottom: 1px solid var(--market-green);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .status {
+            color: var(--gold);
+            font-weight: bold;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* The Quote */
+        .quote-box {
+            font-size: 1.2rem;
+            border-left: 4px solid var(--gold);
+            padding-left: 20px;
+            margin-bottom: 40px;
+            color: #e0f2e9;
+        }
+
+        .highlight { color: var(--gold); font-weight: bold; }
+
+        /* --- THE GRAPH SECTION --- */
+        .graph-wrapper {
+            position: relative;
+            height: 250px;
+            border-left: 2px solid var(--text-muted);
+            border-bottom: 2px solid var(--text-muted);
+            cursor: pointer;
+            overflow: hidden; /* To contain the spike */
+        }
+
+        .y-axis-label {
+            position: absolute;
+            left: -40px;
+            top: 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .x-axis-label {
+            position: absolute;
+            bottom: -25px;
+            right: 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* SVG Graph Line */
+        svg.graph-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        path.trend-line {
+            fill: none;
+            stroke: var(--market-green);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 8px var(--market-green));
+            transition: d 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bouncy transition */
+        }
+
+        /* Initial Wobbly Upward Trend */
+        .path-normal {
+            d: path("M0,200 C50,180 100,220 150,150 S250,180 350,100 S450,120 550,80 S650,100 700,50");
+        }
+
+        /* The Spike to Infinity */
+        .path-spiked {
+            d: path("M0,200 C50,190 100,195 150,180 S200,150 250,0 S300,-200 350,-400 S400,-600 700,-800");
+        }
+
+        /* The Reveal Text overlaying the graph */
+        .reveal-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease 0.5s; /* Delay appears after spike starts */
+        }
+
+        .reveal-overlay h2 {
+            font-size: 2.5rem;
+            color: var(--gold);
+            margin: 0;
+            text-shadow: 0 0 20px var(--gold);
+        }
+        
+        .ath-alert {
+             background: var(--gold);
+             color: var(--bg-dark);
+             padding: 5px 10px;
+             font-weight: bold;
+             font-size: 0.8rem;
+             display: inline-block;
+             margin-bottom: 10px;
+        }
+
+        /* Triggered State */
+        .graph-wrapper.triggered .reveal-overlay {
+            opacity: 1;
+        }
+
+        .hint {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .quote-box { font-size: 1rem; }
+            .graph-wrapper { height: 200px; }
+            .reveal-overlay h2 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer" id="emoji-layer"></div>
+    <div class="bg-layer" id="asset-layer"></div>
+
+    <div class="terminal-container">
+        <div class="ticker-tape">
+            <span>TICKER: <span style="color: var.(--gold)">LOVE</span></span>
+            <span class="status">MARKET STATUS: BULLISH ▲</span>
+        </div>
+
+        <div class="quote-box">
+            "The opportunity cost of not being with you is too high. You are my most <span class="highlight">valuable asset</span>."
+        </div>
+
+        <div class="graph-wrapper" id="graphContainer" onclick="spikeGraph()">
+            <div class="y-axis-label">VALUE</div>
+            
+            <svg class="graph-svg" viewBox="0 0 700 250" preserveAspectRatio="none">
+                <path class="trend-line path-normal" id="graphLine" />
+            </svg>
+
+            <div class="reveal-overlay">
+                <div class="ath-alert">NEW ALL-TIME HIGH!</div>
+                <h2>My Love for You</h2>
+                <p>To Infinity 🚀</p>
+            </div>
+
+            <div class="x-axis-label">TIME (FOREVER)</div>
+        </div>
+        <div class="hint">Click the graph for projection</div>
+    </div>
+
+    <script>
+        // --- BACKGROUND GENERATORS ---
+        const emojiLayer = document.getElementById('emoji-layer');
+        const assetLayer = document.getElementById('asset-layer');
+        const emojis = ['📈', '💰', '💹', '🏦', '💎', '📊', '💵'];
+        const assets = ['🪙', '⬆️', '🚀', '🌕'];
+
+        // Slow floating Emojis
+        setInterval(() => {
+            const el = document.createElement('div');
+            el.classList.add('finance-emoji');
+            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            emojiLayer.appendChild(el);
+            setTimeout(() => el.remove(), 20000);
+        }, 800);
+
+        // Faster rising assets
+        setInterval(() => {
+            const el = document.createElement('div');
+            el.classList.add('rising-asset');
+            el.innerText = assets[Math.floor(Math.random() * assets.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            assetLayer.appendChild(el);
+            setTimeout(() => el.remove(), 6000);
+        }, 400);
+
+
+        // --- GRAPH INTERACTION ---
+        let isSpiked = false;
+
+        function spikeGraph() {
+            if (isSpiked) return;
+            isSpiked = true;
+
+            const container = document.getElementById('graphContainer');
+            const line = document.getElementById('graphLine');
+
+            // Change CSS class to trigger SVG morph transition
+            line.classList.remove('path-normal');
+            line.classList.add('path-spiked');
+
+            // Show overlay text
+            container.classList.add('triggered');
+        }
+    </script>
+</body>
+</html>
